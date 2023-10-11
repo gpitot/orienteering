@@ -13,6 +13,11 @@ export class CanvasService {
   private panY: number;
   private image: HTMLImageElement;
   private mousePressed: boolean;
+
+  private touchStartX: number | undefined;
+  private touchStartY: number | undefined;
+  private touchPrevious: Touch | undefined;
+
   constructor(canvasEl: HTMLCanvasElement, image: HTMLImageElement) {
     this.canvasEl = canvasEl;
     this.image = image;
@@ -38,6 +43,22 @@ export class CanvasService {
     };
 
     this.canvasEl.addEventListener("wheel", (e) => this.handleZoomEvent(e));
+
+    this.canvasEl.addEventListener("touchstart", (e) => {
+      this.mousePressed = true;
+      this.touchStartX = e.changedTouches[0].clientX;
+      this.touchStartY = e.changedTouches[0].clientY;
+    });
+    this.canvasEl.addEventListener("touchend", () => {
+      this.mousePressed = false;
+      this.touchStartX = undefined;
+      this.touchStartY = undefined;
+      this.touchPrevious = undefined;
+      console.log("touch end !!");
+    });
+    this.canvasEl.addEventListener("touchmove", (e) =>
+      this.handleTouchEvent(e)
+    );
     this.canvasEl.addEventListener("mousedown", () => {
       this.mousePressed = true;
     });
@@ -45,9 +66,7 @@ export class CanvasService {
       this.mousePressed = false;
     });
     this.canvasEl.addEventListener("mousemove", (e) => {
-      if (this.mousePressed) {
-        this.handleDragEvent(e);
-      }
+      this.handleDragEvent(e);
     });
 
     window.addEventListener("resize", () => this.resizeCanvas());
@@ -59,6 +78,9 @@ export class CanvasService {
   }
 
   private resizeCanvas() {
+    this.zoom = 3;
+    this.panX = 0;
+    this.panY = 0;
     this.canvasEl.height = window.innerHeight;
     this.canvasEl.width = window.innerWidth;
   }
@@ -72,14 +94,14 @@ export class CanvasService {
   }
 
   private drawMap() {
-    const ratio = this.image.naturalWidth / this.image.naturalHeight;
+    const ratio = this.canvasEl.width / this.canvasEl.height;
     this.clearCanvas();
     this.ctx.drawImage(
       this.image,
       this.panX,
       this.panY,
-      this.zoom * MAP_SIZE,
       this.zoom * MAP_SIZE * ratio,
+      this.zoom * MAP_SIZE,
       0,
       0,
       this.canvasEl.width,
@@ -101,27 +123,54 @@ export class CanvasService {
     this.draw(() => this.drawMap());
   }
 
-  private handleDragEvent(event: MouseEvent) {
-    // get mouse pos and pan
-    let newX = this.panX - event.movementX * PAN_SPEED;
-    let newY = this.panY - event.movementY * PAN_SPEED;
-
+  private panMap(x: number, y: number) {
     const maxWidth = this.image.naturalWidth - this.canvasEl.width;
     const maxHeight = this.image.naturalHeight - this.canvasEl.height;
-
-    if (newX < 0) {
+    let newX = x;
+    let newY = y;
+    if (x < 0) {
       newX = 0;
-    } else if (newX > maxWidth) {
+    } else if (x > maxWidth) {
       newX = maxWidth;
     }
-    if (newY < 0) {
+    if (y < 0) {
       newY = 0;
-    } else if (newY > maxHeight) {
+    } else if (y > maxHeight) {
       newY = maxHeight;
     }
     this.panX = newX;
     this.panY = newY;
 
     this.draw(() => this.drawMap());
+  }
+
+  private handleTouchEvent(event: TouchEvent) {
+    if (!this.mousePressed || !this.touchStartX || !this.touchStartY) return;
+
+    if (!this.touchPrevious) {
+      this.touchPrevious = event.changedTouches[0];
+      return;
+    }
+
+    const currentTouchX =
+      event.changedTouches[event.changedTouches.length - 1].clientX;
+    const currentTouchY =
+      event.changedTouches[event.changedTouches.length - 1].clientY;
+
+    const newX =
+      this.panX -
+      (this.touchPrevious.clientX - currentTouchX) * PAN_SPEED * -0.1;
+    const newY =
+      this.panY -
+      (this.touchPrevious.clientY - currentTouchY) * PAN_SPEED * -0.1;
+    this.panMap(newX, newY);
+  }
+
+  private handleDragEvent(event: MouseEvent) {
+    // get mouse pos and pan
+    if (!this.mousePressed) return;
+    const newX = this.panX - event.movementX * PAN_SPEED;
+    const newY = this.panY - event.movementY * PAN_SPEED;
+    this.panMap(newX, newY);
   }
 }
