@@ -81,8 +81,8 @@ export class CanvasService {
     this.zoom = 3;
     this.panX = 0;
     this.panY = 0;
-    this.canvasEl.height = window.innerHeight;
-    this.canvasEl.width = window.innerWidth;
+    this.canvasEl.height = window.innerHeight - 20;
+    this.canvasEl.width = window.innerWidth - 20;
   }
 
   private draw(callback: () => void) {
