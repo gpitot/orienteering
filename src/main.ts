@@ -9,4 +9,4 @@ const setUpCavnas = (canvasId: string, imgUrl: string): CanvasService => {
   return new CanvasService(canvasEl, img);
 };
 
-const canvas = setUpCavnas("visualMap", visualMapImg);
+setUpCavnas("visualMap", visualMapImg);

@@ -38,10 +38,10 @@ export class CanvasService {
     };
 
     this.canvasEl.addEventListener("wheel", (e) => this.handleZoomEvent(e));
-    this.canvasEl.addEventListener("mousedown", (e) => {
+    this.canvasEl.addEventListener("mousedown", () => {
       this.mousePressed = true;
     });
-    this.canvasEl.addEventListener("mouseup", (e) => {
+    this.canvasEl.addEventListener("mouseup", () => {
       this.mousePressed = false;
     });
     this.canvasEl.addEventListener("mousemove", (e) => {
